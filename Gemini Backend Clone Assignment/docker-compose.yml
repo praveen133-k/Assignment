@@ -1,0 +1,54 @@
+version: '3.8'
+services:
+  web:
+    build: .
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:8008281286Pp@@db:5432/kuvaka
+      - REDIS_URL=redis://redis:6379/0
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+      - JWT_SECRET=${JWT_SECRET}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - STRIPE_PRICE_ID=${STRIPE_PRICE_ID}
+      - DOMAIN=http://localhost:8000
+    depends_on:
+      - db
+      - redis
+  worker:
+    build: .
+    command: celery -A app.chatroom.tasks.celery_app worker --loglevel=info
+    volumes:
+      - .:/app
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:8008281286Pp@@db:5432/kuvaka
+      - REDIS_URL=redis://redis:6379/0
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+      - JWT_SECRET=${JWT_SECRET}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - STRIPE_PRICE_ID=${STRIPE_PRICE_ID}
+      - DOMAIN=http://localhost:8000
+    depends_on:
+      - db
+      - redis
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: kuvaka
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 8008281286Pp@
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+volumes:
+  pgdata: 
